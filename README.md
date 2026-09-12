@@ -6,7 +6,7 @@ The project focuses on practical engineering evidence rather than completing dis
 
 ## Project status
 
-**Current stage:** Planning and repository setup
+**Current stage:** Month 1 — AWS Architecture and Operations (Week 1 in progress)
 
 **Planned duration:** 26 weeks
 
@@ -34,7 +34,7 @@ By the end of this project, the platform should demonstrate that I can:
 
 | Stage | Weeks | Main outcome | Status |
 |---|---:|---|---|
-| AWS architecture and operations | 1-4 | Build and test the initial AWS foundation | Not started |
+| AWS architecture and operations | 1-4 | Build and test the initial AWS foundation | In progress |
 | Terraform and reusable infrastructure | 5-8 | Replace manual setup with reusable infrastructure code | Not started |
 | Kubernetes and Amazon EKS | 9-13 | Deploy and troubleshoot a resilient EKS workload | Not started |
 | CI/CD and Python automation | 14-18 | Automate releases, verification, rollback, and operational checks | Not started |
