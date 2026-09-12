@@ -91,8 +91,10 @@ _(Current, pending fix. Update to ITAdmin once the CLI identity is corrected.)_
 ### 5. First architecture diagram and expected monthly cost
 - **Diagram file:** `docs/diagrams/month-01-architecture.md` (Mermaid, renders on GitHub) —
   committed. Covers VPC/2 AZs, ALB, Auto Scaling app, S3, CloudWatch, Route 53/ACM, IAM.
-- **Estimated monthly cost (USD) and assumptions:** cost table is in the diagram file
-  with placeholder rows — **fill in real per-region figures** to complete this task.
+- **Estimated monthly cost (USD) and assumptions:** **~$0 effective** via a
+  create/destroy-per-session model (no always-on infrastructure). Per-running-hour
+  cost breakdown and caveats are in the diagram file. Teardown must be verified each
+  session; `DevOps Bill` (>$0.01) is the safety net.
 
 ---
 

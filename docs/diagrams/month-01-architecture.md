@@ -65,21 +65,29 @@ flowchart TB
 | CloudWatch | Metrics, logs, and at least one alarm | 4 |
 | IAM | Short-lived / least-privilege access | 1 |
 
-## Expected monthly cost estimate
+## Expected cost — create/destroy model
 
-> Fill in real figures for your region before ticking the Week 1 cost task.
-> These are rough placeholders for a small always-on lab; **destroy resources when
-> idle** to keep this near zero.
+**Operating model:** resources are **created for a lab session and destroyed after**,
+so there is no always-on infrastructure. Effective monthly cost is therefore **~$0**,
+provided teardown is verified every session.
 
-| Item | Assumption | Est. USD / month |
+Cost is better expressed **per running hour** than per month, since nothing runs idle:
+
+| Item | Billed while running? | Notes |
 |---|---|---|
-| EC2 (app instances) | e.g. 1–2 × t3.small, part-time | `____` |
-| Application Load Balancer | 1 ALB, low traffic | `____` |
-| NAT Gateway | 1 NAT, hourly + data | `____` |
-| S3 | Small storage + requests | `____` |
-| Route 53 | 1 hosted zone | `____` |
-| CloudWatch | Basic metrics/logs | `____` |
-| **Total (idle-managed)** | Torn down when not in use | **`____`** |
+| EC2 (app instances) | Yes, per hour | Stop/terminate at end of session |
+| Application Load Balancer | Yes, per hour + LCUs | Delete after session — common orphan |
+| NAT Gateway | Yes, per hour + data | Charges immediately; delete promptly |
+| Elastic IP | Yes, when allocated/idle | Release after teardown |
+| EBS volumes / snapshots | Yes, while they exist | Delete with the instances |
+| S3 | Storage + requests | Tiny; safe to leave or empty the bucket |
+| Route 53 | Per hosted zone / month | Small standing cost if a zone is kept |
+| CloudWatch | Metrics/logs | Negligible for a small lab |
 
-_Budget guardrail:_ `DevOps Bill` alerts at >$0.01, so any real spend triggers an
-email immediately (see `docs/week-01-aws-account-safety-and-iam.md`).
+> **Not truly $0:** NAT/EIP/EBS bill the moment they exist, and forgotten resources
+> (orphaned ALB/NAT) are the usual surprise bill. The `DevOps Bill` budget alerts at
+> **>$0.01**, so any real spend triggers an email immediately.
+>
+> **Teardown discipline:** after each session, verify no chargeable resources remain
+> (see the teardown runbook under `docs/runbooks/`). Fill in real per-hour figures for
+> your region if you want a concrete session-cost estimate.
