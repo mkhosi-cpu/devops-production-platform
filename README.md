@@ -6,7 +6,7 @@ The project focuses on practical engineering evidence rather than completing dis
 
 ## Project status
 
-**Current stage:** Month 1 — AWS Architecture and Operations (Week 1 in progress)
+**Current stage:** Month 1 — AWS Architecture and Operations (Week 2 in progress)
 
 **Planned duration:** 26 weeks
 
