@@ -15,17 +15,17 @@ flowchart TB
     user -->|HTTPS| dns
 
     subgraph AWS["AWS Account (region: TBD)"]
-        subgraph VPC["VPC — 2 Availability Zones"]
+        subgraph VPC["VPC 10.0.0.0/16 — 2 Availability Zones"]
             igw[Internet Gateway]
 
             subgraph AZ1["Availability Zone A"]
-                pub1[Public subnet<br/>ALB + NAT]
-                priv1[Private subnet<br/>App EC2]
+                pub1[Public subnet 10.0.0.0/24<br/>ALB + NAT Gateway]
+                priv1[Private subnet 10.0.10.0/24<br/>App EC2]
             end
 
             subgraph AZ2["Availability Zone B"]
-                pub2[Public subnet<br/>ALB]
-                priv2[Private subnet<br/>App EC2]
+                pub2[Public subnet 10.0.1.0/24<br/>ALB]
+                priv2[Private subnet 10.0.11.0/24<br/>App EC2]
             end
 
             alb{{Application<br/>Load Balancer}}
@@ -51,6 +51,9 @@ flowchart TB
     iam -.governs.-> asg
     iam -.governs.-> s3
 ```
+
+> Detailed CIDR plan, route tables, and security-group rules for this network are in
+> [`docs/week-02-vpc-and-network-design.md`](../week-02-vpc-and-network-design.md).
 
 ## Component notes
 
