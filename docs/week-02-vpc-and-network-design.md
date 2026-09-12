@@ -26,7 +26,7 @@ to your region and needs, then record what you actually built.
 | private-a | AZ A | `10.0.10.0/24` | Private | App instances |
 | private-b | AZ B | `10.0.11.0/24` | Private | App instances |
 
-- **Region / AZs used:** `____________________`
+- **Region / AZs used:** `us-east-1` — e.g. `us-east-1a` (AZ A) and `us-east-1b` (AZ B)
 - **Actual CIDRs (if changed):** `____________________`
 
 ### 2. Route tables, internet access, controlled outbound access

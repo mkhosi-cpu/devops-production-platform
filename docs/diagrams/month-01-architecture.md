@@ -14,7 +14,7 @@ flowchart TB
 
     user -->|HTTPS| dns
 
-    subgraph AWS["AWS Account (region: TBD)"]
+    subgraph AWS["AWS Account (region: us-east-1)"]
         subgraph VPC["VPC 10.0.0.0/16 — 2 Availability Zones"]
             igw[Internet Gateway]
 

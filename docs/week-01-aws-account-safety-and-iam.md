@@ -14,7 +14,7 @@
 
 ### 1. Dedicated lab account or clearly separated lab environment
 - **Account ID (masked):** `********7672`
-- **Primary region:** `____________________`
+- **Primary region:** `us-east-1` (US East, N. Virginia)
 - **How this is isolated from any employer/production use:** `____________________`
   _(Open item: confirm this is a dedicated lab account, not a shared/org account.)_
 
