@@ -14,22 +14,22 @@ flowchart TB
 
     user -->|HTTPS| dns
 
-    subgraph AWS["AWS Account (region: us-east-1)"]
-        subgraph VPC["VPC 10.0.0.0/16 — 2 Availability Zones"]
-            igw[Internet Gateway]
+    subgraph AWS["AWS Account &mdash; region us-east-1"]
+        igw[Internet Gateway]
+        alb{{Application Load Balancer<br/>spans both public subnets}}
 
-            subgraph AZ1["Availability Zone A"]
-                pub1[Public subnet 10.0.0.0/24<br/>ALB + NAT Gateway]
-                priv1[Private subnet 10.0.10.0/24<br/>App EC2]
+        subgraph VPC["VPC 10.0.0.0/16"]
+            subgraph AZA["Availability Zone us-east-1a"]
+                pubA["Public subnet<br/>10.0.0.0/24<br/>NAT Gateway"]
+                privA["Private subnet<br/>10.0.10.0/24<br/>App EC2 (ASG)"]
+                pubA --- privA
             end
 
-            subgraph AZ2["Availability Zone B"]
-                pub2[Public subnet 10.0.1.0/24<br/>ALB]
-                priv2[Private subnet 10.0.11.0/24<br/>App EC2]
+            subgraph AZB["Availability Zone us-east-1b"]
+                pubB["Public subnet<br/>10.0.1.0/24"]
+                privB["Private subnet<br/>10.0.11.0/24<br/>App EC2 (ASG)"]
+                pubB --- privB
             end
-
-            alb{{Application<br/>Load Balancer}}
-            asg[Auto Scaling Group<br/>containerized web app]
         end
 
         s3[(S3<br/>artifacts / logs / static)]
@@ -40,15 +40,14 @@ flowchart TB
     dns --> igw
     igw --> alb
     acm -.TLS.-> alb
-    alb --> pub1
-    alb --> pub2
-    alb --> asg
-    asg --- priv1
-    asg --- priv2
-    asg -->|egress via NAT| pub1
-    asg --> s3
-    asg --> cw
-    iam -.governs.-> asg
+    alb --> privA
+    alb --> privB
+    privA -->|egress via NAT| pubA
+    privB -->|egress via NAT| pubA
+    privA --> s3
+    privB --> s3
+    privA --> cw
+    iam -.governs.-> privA
     iam -.governs.-> s3
 ```
 
