@@ -1,7 +1,7 @@
 # Week 2 — VPC and Network Design
 
 **Stage:** Month 1 · AWS Architecture and Operations
-**Status:** In progress.
+**Status:** All 5 tasks complete (evidence below). Teardown of paid resources pending.
 
 > Evidence rule: a task counts as done only when its evidence is committed here.
 > Keep account IDs, real public IPs, and any sensitive details out of committed files.
@@ -116,26 +116,39 @@ test instances ever cost money; everything else is free. See
 - **Admin access method:** SSM Session Manager (no inbound SSH rule).
 
 ### 4. Test DNS routing and connectivity
-**Evidence required:** test commands and results saved.
+**Evidence required:** test commands and results saved. **Done.**
 
-Record actual commands + (sanitized) output, e.g.:
-- From a public host: reach the ALB / internet.
-- From a private host: reach the internet **via NAT**, but not be reachable from outside.
-- DNS resolution works inside the VPC.
+**Test host:** `devops-lab-test` (`i-08127ed978a9f6726`), t3.micro, Amazon Linux 2023,
+in `private-a` (`10.0.10.42`), **no public IP**, SG `devops-lab-admin-sg`, role
+`devops-lab-ssm-role`. Accessed via **SSM Session Manager** over the interface endpoints
+(no SSH, no public IP) — which itself proves private management works.
 
-```
-# commands and sanitized results here
-____________________
-```
+Results:
+
+| Test | Command | Result | Conclusion |
+|---|---|---|---|
+| No public IP | metadata `public-ipv4` | `404 Not Found` | ✅ genuinely private (private IP `10.0.10.42`) |
+| DNS | `getent hosts s3.us-east-1.amazonaws.com` | resolved to S3 IPs | ✅ VPC DNS works without internet |
+| S3 reachable | `curl https://s3.us-east-1.amazonaws.com` | HTTP **307** | ✅ reachable via S3 gateway endpoint |
+| Internet blocked | `curl https://www.google.com` | **000** (timeout) | ✅ no general egress (no NAT) — controlled |
 
 ### 5. Break one route or security group rule and diagnose
-**Evidence required:** troubleshooting note with symptom, cause, and fix.
+**Evidence required:** troubleshooting note with symptom, cause, and fix. **Done.**
 
-- **What was broken (e.g. removed private-rt NAT route, or tightened sg-app):** `____________________`
-- **Symptom observed:** `____________________`
-- **Diagnosis (how you found the cause):** `____________________`
-- **Fix:** `____________________`
-- **Prevention / lesson:** `____________________`
+- **What was broken:** disassociated `private-rt` from the S3 gateway endpoint
+  (`devops-lab-s3-endpoint`), which removed the S3 prefix-list route from the private
+  subnets.
+- **Symptom observed:** the S3 test that had returned `307` now returned `000` (timeout)
+  — S3 suddenly unreachable from the private instance.
+- **Diagnosis:** checked `private-rt` Routes — the S3 prefix-list route was gone. With no
+  NAT in this design, removing the endpoint route leaves private subnets with no path to
+  S3 at all.
+- **Fix:** re-associated `private-rt` to the S3 gateway endpoint; the prefix-list route
+  returned.
+- **Recovery confirmed:** S3 test returned `307` again.
+- **Prevention / lesson:** in a NAT-less design, the endpoint's route-table association
+  *is* the only egress path — removing it silently breaks S3 access with no fallback.
+  Treat endpoint associations as critical config; watch them in change reviews.
 
 ---
 
