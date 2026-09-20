@@ -1,6 +1,6 @@
 # Terraform — never commit state or local caches
 .terraform/
-.terraform.lock.hcl
+# NOTE: .terraform.lock.hcl SHOULD be committed (pins provider versions) — do not ignore it.
 *.tfstate
 *.tfstate.*
 crash.log
