@@ -99,3 +99,9 @@ recreate — that's expected in the create/destroy model.
   `.terraform.lock.hcl` (pins provider versions).
 - The state bucket is the one resource we keep between sessions; everything else can be
   destroyed and recreated freely.
+- **Gotcha — unmanaged resources block `destroy`:** a `destroy` can hang for many minutes
+  on the VPC if a resource inside it was created outside Terraform and never imported (we
+  hit this with `devops-lab-vpce-sg`, an SSM-endpoint SG from Week 2 — a VPC won't delete
+  while a non-default SG remains). Fix: delete the orphan (`aws ec2 delete-security-group
+  --group-id <id>`) and the VPC drops on the next retry. Lesson: import or avoid creating
+  unmanaged resources inside a Terraform-managed VPC.
