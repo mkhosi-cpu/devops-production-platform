@@ -80,20 +80,27 @@ EC2 → Auto Scaling Groups → Create:
 Wait ~3–5 min for user-data to finish. EC2 → Target groups → `devops-lab-tg` → Targets:
 the target moves `initial` → **healthy**.
 
-## Test  *(to be confirmed during the build)*
+## Test  *(confirmed)*
 - Get the ALB DNS name: EC2 → Load Balancers → `devops-lab-alb` → **DNS name**.
-- `http://<alb-dns>/`, `http://<alb-dns>/health`, `http://<alb-dns>/version`.
-- Confirm the app is reachable **only** via the ALB (SG `devops-lab-app-sg` allows 8080
-  from the ALB SG only).
+- Hit `http://<alb-dns>/`, `/health`, `/version` — expect the landing page,
+  `{"status":"ok"}`, and `{"version":"dev"}`.
+- **Use an explicit `http://`** — browsers auto-upgrade a bare domain to HTTPS (443), which
+  the ALB has no listener for, giving a false "connection refused".
+- Direct access is restricted: `devops-lab-app-sg` allows 8080 only from the ALB SG.
 
 ## Route 53 / TLS
-Lab alternative (no domain): serve **HTTP via the ALB DNS name**; document that TLS/ACM is
-deferred until a domain is available.
+Lab alternative (no domain): serve **HTTP via the ALB DNS name**; "Not secure" in the
+browser is expected. TLS/ACM + Route 53 are deferred until a domain is available (the ALB
+SG already permits 443 for a future HTTPS listener).
 
-## Failure simulation  *(to be confirmed during the build)*
+## Failure simulation  *(confirmed)*
 - EC2 → Instances → terminate the running app instance.
-- Watch the ASG launch a replacement that bootstraps and rejoins the target group healthy,
-  with no manual steps. Record the recovery time.
+- The ASG reacts in ~2s: marks it out of service (ELB connection draining) and launches a
+  replacement "in response to an unhealthy instance needing to be replaced" (see the ASG
+  **Activity** tab).
+- The replacement runs the same user-data, rejoins the target group **healthy**, and the
+  app is back through the ALB within ~3–5 min — **no manual steps**. Brief ALB 503 during
+  the gap is expected.
 
 ## Teardown
 1. Auto Scaling Groups → `devops-lab-asg` → Delete (terminates its instances).
