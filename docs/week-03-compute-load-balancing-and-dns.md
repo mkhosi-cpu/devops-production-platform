@@ -28,13 +28,24 @@ in the same session. A short ~1–2 hour session is a few cents. The `DevOps Bil
 
 ---
 
+## Deployment approach (decision)
+
+Manual weeks use an **EC2 user-data bootstrap** (Docker/ECR is reserved for the
+automation phase). Because the Week 2 network has **no NAT**, the app instance runs in a
+**public subnet** so user-data can `pip install` FastAPI/uvicorn from PyPI over the IGW.
+Exposure is restricted by security group (port 8080 only from the ALB SG); admin via SSM
+over the IGW (no interface endpoints needed — cheaper than the Week 2 test). See
+[`architecture-decisions/0003-manual-deploy-user-data-public-subnet.md`](architecture-decisions/0003-manual-deploy-user-data-public-subnet.md).
+The private-subnet deployment returns in Month 3 via ECR + endpoints.
+
 ## Evidence checklist
 
-### 1. Deploy a small containerized web application to EC2
+### 1. Deploy the sample app to EC2 via user-data
 **Evidence required:** application responds through a controlled endpoint.
-- **AMI / instance type:** `____________________`
-- **Subnet (private):** `____________________`
-- **Container / app used:** `____________________`
+- **AMI / instance type:** `____________________` (Amazon Linux 2023, t3.micro)
+- **Subnet (public-a):** `____________________`
+- **App + bootstrap:** FastAPI app from `app/` installed by user-data (pip install,
+  run `uvicorn main:app --port 8080`); `APP_VERSION` set for this env.
 - **How it was reached for the test:** `____________________`
 
 ### 2. Place an Application Load Balancer in front of the application
