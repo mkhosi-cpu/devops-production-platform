@@ -1,7 +1,7 @@
 # Week 3 — Compute, Load Balancing, and DNS
 
 **Stage:** Month 1 · AWS Architecture and Operations
-**Status:** ✅ All 5 tasks complete (evidence below). Teardown of paid resources pending.
+**Status:** ✅ Complete — all 5 tasks evidenced; paid resources torn down.
 
 > Evidence rule: a task counts as done only when its evidence is committed here.
 > Keep account IDs, real public IPs, and any sensitive details out of committed files.
@@ -98,8 +98,12 @@ The private-subnet deployment returns in Month 3 via ECR + endpoints.
 ---
 
 ## Teardown
-- [ ] Deleted the ALB and target group.
-- [ ] Terminated app instances; deleted the Auto Scaling group and launch template.
-- [ ] Released any Elastic IPs; deleted leftover volumes.
-- [ ] (If created) decided whether to keep or delete the Route 53 hosted zone.
-- [ ] Verified 0 chargeable resources remain (see `docs/runbooks/teardown.md`).
+- [x] Deleted the Auto Scaling group `devops-lab-asg` (terminated its instance).
+- [x] Deleted the ALB `devops-lab-alb` and target group `devops-lab-tg`.
+- [x] Verified: no running instances, no load balancers, no Elastic IPs, no leftover volumes.
+- [x] Kept (all free): launch template `devops-lab-app-lt`, security groups, and the
+      Week 2 network — retained for the next session.
+- No Route 53 hosted zone was created (HTTP lab alternative used).
+
+**Result:** 0 chargeable resources remain. Session cost was a few cents (ALB + one
+t3.micro for ~1 hour).
