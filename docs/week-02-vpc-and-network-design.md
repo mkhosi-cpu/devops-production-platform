@@ -58,8 +58,19 @@ test instances ever cost money; everything else is free. See
 | private-a | AZ A | `10.0.10.0/24` | Private | App instances |
 | private-b | AZ B | `10.0.11.0/24` | Private | App instances |
 
-- **Region / AZs used:** `us-east-1` — e.g. `us-east-1a` (AZ A) and `us-east-1b` (AZ B)
-- **Actual CIDRs (if changed):** `____________________`
+- **Region / AZs used:** `us-east-1` — `us-east-1a` (AZ A) and `us-east-1b` (AZ B)
+- **Actual CIDRs:** as planned, unchanged.
+
+**As built (Phase 1 — all free resources):**
+
+| Resource | Name | ID | Detail |
+|---|---|---|---|
+| VPC | `devops-lab-vpc` | `vpc-036e955def8d2cce6` | `10.0.0.0/16` |
+| Subnet | `public-a` | `subnet-05f43f33812a1848a` | `10.0.0.0/24`, us-east-1a |
+| Subnet | `public-b` | `subnet-03543dc6e4464e849` | `10.0.1.0/24`, us-east-1b |
+| Subnet | `private-a` | `subnet-068a3ae15d3f14360` | `10.0.10.0/24`, us-east-1a |
+| Subnet | `private-b` | `subnet-03a69092909fcbf16` | `10.0.11.0/24`, us-east-1b |
+| Internet Gateway | `devops-lab-igw` | `igw-02a50d015605ef2e2` | attached to VPC |
 
 ### 2. Route tables, internet access, controlled outbound access
 **Evidence required:** traffic paths explained in the README (or here).
@@ -75,21 +86,34 @@ test instances ever cost money; everything else is free. See
 - **Controlled outbound (free default):** private app → **S3 Gateway Endpoint** → S3,
   with no internet path. A `0.0.0.0/0` → NAT route is only added if general internet
   egress is required (costs ~$0.045/hr — see cost-avoidance build order above).
-- **Confirmation private subnets have no direct inbound from the internet:** `____________________`
+- **Confirmation private subnets have no direct inbound from the internet:** confirmed —
+  `private-rt` has no `0.0.0.0/0` route; only local + the S3 prefix-list route.
+
+**As built:**
+
+| Route table | ID | Associations | Routes |
+|---|---|---|---|
+| `public-rt` | `rtb-0be98be5c11857af7` | public-a, public-b | `10.0.0.0/16`→local, `0.0.0.0/0`→`igw-02a50d015605ef2e2` (Active) |
+| `private-rt` | `rtb-09c6ab1877aeb7a7c` | private-a, private-b | `10.0.0.0/16`→local, S3 prefix-list→`vpce-00230d915ca9d2aec` |
+| S3 Gateway Endpoint | `vpce-00230d915ca9d2aec` | assoc. to `private-rt` | `com.amazonaws.us-east-1.s3`, type Gateway, **$0**, Available |
 
 ### 3. Security groups (least privilege)
 **Evidence required:** rules use minimum required ports and sources.
 
-**Proposed rules** (each SG references the previous one, not open CIDRs, where possible):
+> Note: AWS reserves the `sg-` prefix for security-group IDs, so groups are named
+> `devops-lab-*-sg` instead.
 
-| SG | Inbound | Source | Purpose |
-|---|---|---|---|
-| `sg-alb` | 443 (and 80→redirect) | `0.0.0.0/0` | Public HTTPS to load balancer |
-| `sg-app` | app port (e.g. 8080) | `sg-alb` only | Only the ALB can reach the app |
-| `sg-admin` | 22 / SSM | your IP or SSM only | Admin access — avoid `0.0.0.0/0` |
+**As built:**
 
-- **Outbound:** restrict where practical; document any `0.0.0.0/0` egress and why.
-- **Admin access method (SSM Session Manager preferred over open SSH):** `____________________`
+| SG | ID | Inbound | Source | Purpose |
+|---|---|---|---|---|
+| `devops-lab-alb-sg` | `sg-09d1b3fafba4eadd7` | 443 | `0.0.0.0/0` | Public HTTPS to load balancer (intended) |
+| `devops-lab-app-sg` | `sg-0c2e860d40c311480` | TCP 8080 | `devops-lab-alb-sg` only | Only the ALB can reach the app |
+| `devops-lab-admin-sg` | `sg-0f9f4ba19e0bf3f94` | none | — | Admin via SSM; no inbound (no open SSH) |
+
+- **Least-privilege point:** `devops-lab-app-sg` accepts 8080 only from the ALB SG,
+  never from the internet.
+- **Admin access method:** SSM Session Manager (no inbound SSH rule).
 
 ### 4. Test DNS routing and connectivity
 **Evidence required:** test commands and results saved.
