@@ -12,6 +12,38 @@ to your region and needs, then record what you actually built.
 
 ---
 
+## Cost-avoidance build order
+
+Week 2 can be completed for **~$0** if built in this order. Only outbound egress and
+test instances ever cost money; everything else is free. See
+[`docs/architecture-decisions/0001-s3-gateway-endpoint-over-nat.md`](architecture-decisions/0001-s3-gateway-endpoint-over-nat.md).
+
+1. **Build the free resources first (no time pressure, $0):** VPC, 4 subnets, Internet
+   Gateway, route tables, security groups. Document and screenshot these — covers
+   Tasks 1, 3, and most of Task 2 at zero cost.
+2. **Use a free S3 Gateway Endpoint for "controlled outbound," not a NAT Gateway.**
+   A Gateway Endpoint lets private instances reach S3 with no internet path and no NAT
+   ($0). This satisfies Task 2's controlled-outbound intent and is a stronger
+   least-privilege story. Only spin up a NAT **Gateway** in a short delete-immediately
+   burst if you specifically want to practice it (~$0.045/hr); a NAT **instance**
+   (`t4g.nano`) is ~10× cheaper if you want egress left up briefly.
+3. **Test instances (Tasks 4–5): smallest, shortest, no public IP.** Launch
+   `t3.micro`/`t4g.nano` only while testing, **disable auto-assign public IP**, and
+   connect via **SSM Session Manager** (avoids the ~$0.005/hr public-IPv4 charge and is
+   more secure than open SSH). Terminate right after.
+4. **Tear down** per `docs/runbooks/teardown.md` — the `DevOps Bill` alert (>$0.01) is
+   the safety net if anything is left running.
+
+| Resource | Charged? | Cost-avoidance |
+|---|---|---|
+| VPC, subnets, route tables, IGW, security groups | No | Build and leave up freely |
+| S3 **Gateway** Endpoint | **No** | Use for controlled egress instead of NAT |
+| NAT **Gateway** | Yes (~$0.045/hr + data) | Avoid; or short burst; or NAT instance |
+| Public IPv4 | Yes (~$0.005/hr each) | No public IPs on test instances; use SSM |
+| EC2 test instances | Yes (~$0.01/hr) | Smallest size, only while testing, terminate |
+
+---
+
 ## Evidence checklist
 
 ### 1. VPC across at least two Availability Zones
@@ -35,11 +67,14 @@ to your region and needs, then record what you actually built.
 | Route table | Associated subnets | Route | Target |
 |---|---|---|---|
 | public-rt | public-a, public-b | `0.0.0.0/0` | Internet Gateway |
-| private-rt | private-a, private-b | `0.0.0.0/0` | NAT Gateway (egress only) |
+| private-rt | private-a, private-b | S3 prefix list | S3 Gateway Endpoint (free) |
+| private-rt (optional) | private-a, private-b | `0.0.0.0/0` | NAT Gateway — only if general egress needed |
 | (local) | all | `10.0.0.0/16` | local |
 
 - **Traffic path (inbound):** Internet → IGW → public subnet ALB → private subnet app.
-- **Traffic path (outbound from private):** app → NAT Gateway (public subnet) → IGW.
+- **Controlled outbound (free default):** private app → **S3 Gateway Endpoint** → S3,
+  with no internet path. A `0.0.0.0/0` → NAT route is only added if general internet
+  egress is required (costs ~$0.045/hr — see cost-avoidance build order above).
 - **Confirmation private subnets have no direct inbound from the internet:** `____________________`
 
 ### 3. Security groups (least privilege)
