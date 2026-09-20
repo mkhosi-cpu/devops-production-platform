@@ -1,7 +1,7 @@
 # Week 2 — VPC and Network Design
 
 **Stage:** Month 1 · AWS Architecture and Operations
-**Status:** All 5 tasks complete (evidence below). Teardown of paid resources pending.
+**Status:** ✅ Complete — all 5 tasks evidenced; paid resources torn down.
 
 > Evidence rule: a task counts as done only when its evidence is committed here.
 > Keep account IDs, real public IPs, and any sensitive details out of committed files.
@@ -161,5 +161,11 @@ Results:
 ---
 
 ## Teardown
-- [ ] Ran `docs/runbooks/teardown.md` — verified NAT Gateway, EIPs, and any test
-      instances removed; 0 chargeable resources remain.
+- [x] Terminated test instance `devops-lab-test` (root volume auto-deleted).
+- [x] Deleted the 3 SSM interface endpoints (`ssm`, `ssmmessages`, `ec2messages`).
+- [x] Verified: no running instances, no NAT Gateways, no Elastic IPs, no leftover volumes.
+- [x] Kept (all free): VPC, subnets, IGW, route tables, security groups, IAM role, and
+      the S3 **Gateway** endpoint — retained for later weeks at $0.
+
+**Result:** 0 chargeable resources remain. Session cost was a few cents (interface
+endpoints for ~1 hour + a brief t3.micro).
