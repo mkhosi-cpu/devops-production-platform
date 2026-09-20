@@ -6,7 +6,7 @@ The project focuses on practical engineering evidence rather than completing dis
 
 ## Project status
 
-**Current stage:** Month 1 — AWS Architecture and Operations (Weeks 1–3 done; Week 4 next)
+**Current stage:** Month 2 — Terraform and Reusable Infrastructure (Week 5 next; Week 4 deferred)
 
 **Planned duration:** 26 weeks
 
