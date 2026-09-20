@@ -1,55 +1,49 @@
-# ============================================================================
-# Week 2 network, expressed as Terraform. Resources reference each other by
-# logical name (e.g. aws_vpc.lab.id), which also defines create/destroy order.
-# ============================================================================
+# Network module: VPC, subnets, IGW, route tables, security groups, S3 endpoint.
+# Same resources as the original flat config, now parameterized by variables so
+# the module can build any environment's network.
 
-# ---- VPC ----
 resource "aws_vpc" "lab" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = var.vpc_cidr
   enable_dns_support   = true
-  enable_dns_hostnames = true # enabled in Week 2 for the interface endpoints
-  tags                 = { Name = "devops-lab-vpc" }
+  enable_dns_hostnames = true
+  tags                 = { Name = "${var.name_prefix}-vpc" }
 }
 
-# ---- Subnets (2 public, 2 private, across 2 AZs) ----
 resource "aws_subnet" "public_a" {
   vpc_id                  = aws_vpc.lab.id
-  cidr_block              = "10.0.0.0/24"
-  availability_zone       = "us-east-1a"
-  map_public_ip_on_launch = true # enabled in Week 3
+  cidr_block              = var.public_subnet_a_cidr
+  availability_zone       = var.az_a
+  map_public_ip_on_launch = true
   tags                    = { Name = "public-a" }
 }
 
 resource "aws_subnet" "public_b" {
   vpc_id                  = aws_vpc.lab.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-east-1b"
+  cidr_block              = var.public_subnet_b_cidr
+  availability_zone       = var.az_b
   map_public_ip_on_launch = true
   tags                    = { Name = "public-b" }
 }
 
 resource "aws_subnet" "private_a" {
   vpc_id            = aws_vpc.lab.id
-  cidr_block        = "10.0.10.0/24"
-  availability_zone = "us-east-1a"
+  cidr_block        = var.private_subnet_a_cidr
+  availability_zone = var.az_a
   tags              = { Name = "private-a" }
 }
 
 resource "aws_subnet" "private_b" {
   vpc_id            = aws_vpc.lab.id
-  cidr_block        = "10.0.11.0/24"
-  availability_zone = "us-east-1b"
+  cidr_block        = var.private_subnet_b_cidr
+  availability_zone = var.az_b
   tags              = { Name = "private-b" }
 }
 
-# ---- Internet Gateway ----
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.lab.id
-  tags   = { Name = "devops-lab-igw" }
+  tags   = { Name = "${var.name_prefix}-igw" }
 }
 
-# ---- Route tables ----
-# Public: default route to the internet via the IGW.
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.lab.id
   route {
@@ -59,14 +53,11 @@ resource "aws_route_table" "public" {
   tags = { Name = "public-rt" }
 }
 
-# Private: no internet route. The S3 prefix-list route is owned by the S3
-# endpoint below (via route_table_ids), so we ignore route drift here.
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.lab.id
   tags   = { Name = "private-rt" }
-
   lifecycle {
-    ignore_changes = [route] # the S3 gateway endpoint manages a route here
+    ignore_changes = [route] # S3 gateway endpoint manages a route here
   }
 }
 
@@ -74,25 +65,21 @@ resource "aws_route_table_association" "public_a" {
   subnet_id      = aws_subnet.public_a.id
   route_table_id = aws_route_table.public.id
 }
-
 resource "aws_route_table_association" "public_b" {
   subnet_id      = aws_subnet.public_b.id
   route_table_id = aws_route_table.public.id
 }
-
 resource "aws_route_table_association" "private_a" {
   subnet_id      = aws_subnet.private_a.id
   route_table_id = aws_route_table.private.id
 }
-
 resource "aws_route_table_association" "private_b" {
   subnet_id      = aws_subnet.private_b.id
   route_table_id = aws_route_table.private.id
 }
 
-# ---- Security groups ----
 resource "aws_security_group" "alb" {
-  name        = "devops-lab-alb-sg"
+  name        = "${var.name_prefix}-alb-sg"
   description = "HTTPS from internet to load balancer"
   vpc_id      = aws_vpc.lab.id
 
@@ -114,17 +101,17 @@ resource "aws_security_group" "alb" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  tags = { Name = "devops-lab-alb-sg" }
+  tags = { Name = "${var.name_prefix}-alb-sg" }
 }
 
 resource "aws_security_group" "app" {
-  name        = "devops-lab-app-sg"
+  name        = "${var.name_prefix}-app-sg"
   description = "App port from ALB SG only"
   vpc_id      = aws_vpc.lab.id
 
   ingress {
-    from_port       = 8080
-    to_port         = 8080
+    from_port       = var.app_port
+    to_port         = var.app_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
@@ -134,11 +121,11 @@ resource "aws_security_group" "app" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  tags = { Name = "devops-lab-app-sg" }
+  tags = { Name = "${var.name_prefix}-app-sg" }
 }
 
 resource "aws_security_group" "admin" {
-  name        = "devops-lab-admin-sg"
+  name        = "${var.name_prefix}-admin-sg"
   description = "Admin access via SSM; no inbound"
   vpc_id      = aws_vpc.lab.id
 
@@ -148,14 +135,13 @@ resource "aws_security_group" "admin" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  tags = { Name = "devops-lab-admin-sg" }
+  tags = { Name = "${var.name_prefix}-admin-sg" }
 }
 
-# ---- S3 Gateway endpoint (free controlled egress for private subnets) ----
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.lab.id
-  service_name      = "com.amazonaws.us-east-1.s3"
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [aws_route_table.private.id]
-  tags              = { Name = "devops-lab-s3-endpoint" }
+  tags              = { Name = "${var.name_prefix}-s3-endpoint" }
 }

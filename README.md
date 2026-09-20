@@ -6,7 +6,7 @@ The project focuses on practical engineering evidence rather than completing dis
 
 ## Project status
 
-**Current stage:** Month 2 — Terraform and Reusable Infrastructure (Week 5 done; Week 6 next; Week 4 deferred)
+**Current stage:** Month 2 — Terraform and Reusable Infrastructure (Weeks 5–6 done; Week 7 next; Week 4 deferred)
 
 **Planned duration:** 26 weeks
 
