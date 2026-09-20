@@ -20,7 +20,7 @@ flowchart TB
 
         subgraph VPC["VPC 10.0.0.0/16"]
             subgraph AZA["Availability Zone us-east-1a"]
-                pubA["Public subnet<br/>10.0.0.0/24<br/>NAT Gateway"]
+                pubA["Public subnet<br/>10.0.0.0/24"]
                 privA["Private subnet<br/>10.0.10.0/24<br/>App EC2 (ASG)"]
                 pubA --- privA
             end
@@ -30,6 +30,8 @@ flowchart TB
                 privB["Private subnet<br/>10.0.11.0/24<br/>App EC2 (ASG)"]
                 pubB --- privB
             end
+
+            s3ep{{S3 Gateway Endpoint<br/>free · controlled egress}}
         end
 
         s3[(S3<br/>artifacts / logs / static)]
@@ -42,14 +44,19 @@ flowchart TB
     acm -.TLS.-> alb
     alb --> privA
     alb --> privB
-    privA -->|egress via NAT| pubA
-    privB -->|egress via NAT| pubA
-    privA --> s3
-    privB --> s3
+    privA -->|egress to S3| s3ep
+    privB -->|egress to S3| s3ep
+    s3ep --> s3
     privA --> cw
     iam -.governs.-> privA
     iam -.governs.-> s3
 ```
+
+> **No NAT Gateway by design** — private-subnet egress goes through the free S3 Gateway
+> Endpoint instead. See
+> [`docs/architecture-decisions/0001-s3-gateway-endpoint-over-nat.md`](../architecture-decisions/0001-s3-gateway-endpoint-over-nat.md).
+> ALB, Auto Scaling, Route 53, and ACM are the Month 1 target (Weeks 3–4) and are not
+> built yet.
 
 > Detailed CIDR plan, route tables, and security-group rules for this network are in
 > [`docs/week-02-vpc-and-network-design.md`](../week-02-vpc-and-network-design.md).
