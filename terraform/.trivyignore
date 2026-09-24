@@ -1,0 +1,16 @@
+# Accepted Trivy exceptions for the lab, each with justification.
+# Anything NOT listed here must be fixed. Review these before production.
+
+# AWS-0104: unrestricted egress (0.0.0.0/0). Open egress is AWS's default SG
+# behavior; scoping egress to specific destinations is a production hardening
+# step. Accepted for the lab.
+AWS-0104
+
+# AWS-0164: public subnets assign public IPs. Intentional — the public subnets
+# host internet-facing resources (ALB, and Month 1's app instances). Private
+# subnets do NOT assign public IPs.
+AWS-0164
+
+# AWS-0178: VPC Flow Logs not enabled. Deferred to the observability stage
+# (Month 5), where logging/monitoring is added deliberately (adds cost).
+AWS-0178

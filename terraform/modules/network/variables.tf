@@ -26,16 +26,20 @@ variable "az_b" {
 }
 
 variable "public_subnet_a_cidr" {
-  type = string
+  description = "CIDR for the public subnet in AZ a"
+  type        = string
 }
 variable "public_subnet_b_cidr" {
-  type = string
+  description = "CIDR for the public subnet in AZ b"
+  type        = string
 }
 variable "private_subnet_a_cidr" {
-  type = string
+  description = "CIDR for the private subnet in AZ a"
+  type        = string
 }
 variable "private_subnet_b_cidr" {
-  type = string
+  description = "CIDR for the private subnet in AZ b"
+  type        = string
 }
 
 variable "app_port" {

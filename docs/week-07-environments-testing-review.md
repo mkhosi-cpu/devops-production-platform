@@ -14,15 +14,25 @@ environments** from the same code, plus automated checks and review discipline.
 ## Evidence checklist
 
 ### 1. Separate dev and prod-style configs without duplicating modules
-**Evidence required:** environment differences are explicit.
-- **Structure chosen (e.g. `environments/dev`, `environments/prod`, or workspaces):** `____________________`
-- **Same module, different inputs (CIDRs, sizes, name_prefix):** `____________________`
-- _Ties to the ladder in `docs/environments.md` (Local→Dev→QA→Staging→Prod)._
+**Evidence required:** environment differences are explicit. **Done.**
+- **Structure:** `terraform/environments/dev` and `.../prod` — each a thin root calling the
+  shared `modules/network`, with its **own S3 state key** (`env/dev/…`, `env/prod/…`).
+- **Same module, different inputs:** dev `name_prefix=devops-lab`, `10.0.0.0/16`,
+  `Environment=dev`; prod `name_prefix=devops-lab-prod`, `10.1.0.0/16`, `Environment=prod`.
+  Differences live plainly in each folder's `main.tf` — no duplicated resource code.
+- Dev adopted the existing live network (state migrated → `plan` = No changes); prod
+  `plan` = 16 to add (validated, not applied → $0). Chose folders over workspaces (ADR 0004).
 
-### 2. Add linting, security checks, and docs generation where useful
-**Evidence required:** automated checks run locally or in CI.
-- **Tools (e.g. `terraform fmt -check`, `validate`, tflint, tfsec/checkov, terraform-docs):** `____________________`
-- **How they run:** `____________________`
+### 2. Add linting, security checks, and docs generation
+**Evidence required:** automated checks run locally or in CI. **Done.**
+- **Tools:** `terraform fmt`, `terraform validate` (per env), **tflint** (recommended
+  ruleset via `.tflint.hcl`), **Trivy** (`trivy config`), **terraform-docs** (auto-generates
+  the module README tables). Bundled into `terraform/check.ps1`.
+- **Security triage:** Trivy's initial 24 findings → fixed AWS-0124 (added SG rule
+  descriptions); accepted + documented AWS-0104/0164/0178 in `terraform/.trivyignore` with
+  justifications. Result: `trivy config .` reports **0 unaddressed findings**.
+- tflint flagged the module missing `required_version`/`required_providers` → fixed
+  (`modules/network/versions.tf`); now clean. How-to: `docs/how-to/05-*`.
 
 ### 3. Review plans for destructive/unexpected changes before apply
 **Evidence required:** PR template includes an infrastructure review checklist.

@@ -84,18 +84,21 @@ resource "aws_security_group" "alb" {
   vpc_id      = aws_vpc.lab.id
 
   ingress {
+    description = "HTTPS from internet"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
+    description = "HTTP from internet (redirect to HTTPS)"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
   egress {
+    description = "All outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -110,12 +113,14 @@ resource "aws_security_group" "app" {
   vpc_id      = aws_vpc.lab.id
 
   ingress {
+    description     = "App port from ALB SG only"
     from_port       = var.app_port
     to_port         = var.app_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
   egress {
+    description = "All outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -130,6 +135,7 @@ resource "aws_security_group" "admin" {
   vpc_id      = aws_vpc.lab.id
 
   egress {
+    description = "All outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
